@@ -1,0 +1,24 @@
+<div class="rounded-lg border border-slate-200 p-4 dark:border-slate-700">
+  <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+    <div>
+      <h2 class="text-sm font-semibold">Freie Termine zum Versenden</h2>
+      <p class="text-xs text-slate-500">
+        {{ lines().length }} Tage, {{ totalHours() | number: '1.0-1' }} Stunden
+      </p>
+    </div>
+    <button
+      type="button"
+      class="rounded bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-40 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
+      [disabled]="lines().length === 0"
+      (click)="copy()"
+    >
+      {{ copied() ? 'Kopiert' : 'Kopieren' }}
+    </button>
+  </div>
+
+  @if (lines().length === 0) {
+    <p class="text-sm text-slate-500">Im gewählten Zeitraum gibt es keine freien Termine.</p>
+  } @else {
+    <pre class="overflow-x-auto whitespace-pre-wrap font-mono text-xs leading-relaxed text-slate-700 dark:text-slate-200">{{ text() }}</pre>
+  }
+</div>

@@ -11,6 +11,4 @@ dist/
 .angular/
 
 # Generierte Kalenderdaten (nie committen)
-Calendar.Frontend/src/assets/availability-*.json
-Calendar.Frontend/src/assets/details-*.json
-Calendar.Frontend/src/assets/data-manifest.json
+Calendar.Frontend/public/data/

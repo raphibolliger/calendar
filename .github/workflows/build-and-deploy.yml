@@ -1,0 +1,62 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: Calendar.Frontend/package-lock.json
+
+      - name: Abhängigkeiten installieren
+        run: npm ci --prefix Calendar.Frontend
+
+      - name: Kalenderdaten aufbereiten
+        env:
+          CalendarSources: ${{ secrets.CALENDAR_SOURCES }}
+          AvailabilityOverrides: ${{ secrets.AVAILABILITY_OVERRIDES }}
+          DetailsSecret: ${{ secrets.DETAILS_SECRET }}
+        run: dotnet run -c Release --project Calendar.Processing/Calendar.Processing
+
+      - name: Frontend bauen
+        run: npm run build --prefix Calendar.Frontend
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: Calendar.Frontend/dist/calendar-frontend/browser
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

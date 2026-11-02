@@ -1,0 +1,205 @@
+<div class="mx-auto max-w-6xl px-4 pb-16 pt-6 sm:px-6">
+  <header class="mb-6 flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h1 class="text-xl font-semibold tracking-tight">Verfügbarkeit</h1>
+      <p class="text-sm text-slate-500">
+        Freie Zeitfenster aus allen Kalendern – ohne Angabe, worum es geht.
+      </p>
+    </div>
+    <div class="text-right text-xs text-slate-500">
+      @if (generatedAt()) {
+        <div>Stand {{ generatedAt() }}</div>
+      }
+      <button type="button" class="mt-1 underline hover:text-slate-700" (click)="reload()">
+        neu laden
+      </button>
+      @if (detailsUnlocked()) {
+        <div class="mt-1 inline-block rounded bg-amber-100 px-1.5 py-0.5 text-amber-800 dark:bg-amber-950 dark:text-amber-200">
+          Detailmodus
+        </div>
+      }
+    </div>
+  </header>
+
+  @if (availability.isLoading()) {
+    <p class="text-sm text-slate-500">Daten werden geladen …</p>
+  } @else if (availability.error()) {
+    <p class="rounded border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-200">
+      Die Verfügbarkeitsdaten konnten nicht geladen werden.
+    </p>
+  } @else {
+    <section class="mb-5 rounded-lg border border-slate-200 p-4 dark:border-slate-700">
+      <div class="flex flex-wrap items-center gap-4">
+        <div class="flex items-center gap-1">
+          <button type="button" class="rounded border border-slate-300 px-2 py-1 text-sm dark:border-slate-600" (click)="shiftWeek(-1)">←</button>
+          <button type="button" class="rounded border border-slate-300 px-2 py-1 text-sm dark:border-slate-600" (click)="resetWeek()">heute</button>
+          <button type="button" class="rounded border border-slate-300 px-2 py-1 text-sm dark:border-slate-600" (click)="shiftWeek(1)">→</button>
+          <span class="ml-2 text-sm font-medium">{{ weekLabel() }}</span>
+        </div>
+
+        <div class="flex items-center gap-2 text-sm">
+          <label for="from" class="text-slate-500">von</label>
+          <input
+            id="from"
+            type="time"
+            step="900"
+            class="rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:bg-slate-800"
+            [value]="asTime(workFrom())"
+            (change)="setWorkFrom($any($event.target).value)"
+          />
+          <label for="to" class="text-slate-500">bis</label>
+          <input
+            id="to"
+            type="time"
+            step="900"
+            class="rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:bg-slate-800"
+            [value]="asTime(workTo())"
+            (change)="setWorkTo($any($event.target).value)"
+          />
+        </div>
+
+        <div class="flex items-center gap-1">
+          @for (day of weekdayButtons; track day.index) {
+            <button
+              type="button"
+              class="w-9 rounded border px-1 py-1 text-xs"
+              [class]="
+                activeWeekdays().includes(day.index)
+                  ? 'border-emerald-400 bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-100'
+                  : 'border-slate-300 text-slate-400 dark:border-slate-600'
+              "
+              (click)="toggleWeekday(day.index)"
+            >
+              {{ day.label }}
+            </button>
+          }
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3 text-sm">
+          <label class="flex items-center gap-1">
+            <span class="text-slate-500">min.</span>
+            <select
+              class="rounded border border-slate-300 px-1 py-1 dark:border-slate-600 dark:bg-slate-800"
+              (change)="minSlot.set(+$any($event.target).value)"
+            >
+              <option value="30" [selected]="minSlot() === 30">30 min</option>
+              <option value="60" [selected]="minSlot() === 60">1 h</option>
+              <option value="90" [selected]="minSlot() === 90">1.5 h</option>
+              <option value="120" [selected]="minSlot() === 120">2 h</option>
+            </select>
+          </label>
+          <label class="flex items-center gap-1">
+            <span class="text-slate-500">Puffer</span>
+            <select
+              class="rounded border border-slate-300 px-1 py-1 dark:border-slate-600 dark:bg-slate-800"
+              (change)="buffer.set(+$any($event.target).value)"
+            >
+              <option value="0" [selected]="buffer() === 0">0</option>
+              <option value="15" [selected]="buffer() === 15">15 min</option>
+              <option value="30" [selected]="buffer() === 30">30 min</option>
+            </select>
+          </label>
+          <label class="flex items-center gap-1">
+            <span class="text-slate-500">Vorlauf</span>
+            <select
+              class="rounded border border-slate-300 px-1 py-1 dark:border-slate-600 dark:bg-slate-800"
+              (change)="leadHours.set(+$any($event.target).value)"
+            >
+              <option value="0" [selected]="leadHours() === 0">keiner</option>
+              <option value="4" [selected]="leadHours() === 4">4 h</option>
+              <option value="24" [selected]="leadHours() === 24">24 h</option>
+              <option value="48" [selected]="leadHours() === 48">48 h</option>
+            </select>
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <section class="mb-6">
+      <app-week-grid [columns]="weekColumns()" [display]="display()" [showDetails]="detailsUnlocked()" />
+      <div class="mt-2 flex flex-wrap items-center gap-4 text-xs text-slate-500">
+        <span class="flex items-center gap-1">
+          <span class="inline-block h-3 w-3 rounded bg-emerald-100 ring-1 ring-emerald-300"></span> frei
+        </span>
+        <span class="flex items-center gap-1">
+          <span class="inline-block h-3 w-3 rounded bg-slate-300"></span> belegt
+        </span>
+        <span class="flex items-center gap-1">
+          <span class="soft-block inline-block h-3 w-3 rounded ring-1 ring-sky-300"></span> kein Hindernis
+        </span>
+        <span class="flex items-center gap-1">
+          <span class="inline-block h-3 w-3 rounded bg-rose-100 ring-1 ring-rose-300"></span> abwesend
+        </span>
+      </div>
+    </section>
+
+    <section class="mb-4 flex items-center gap-2 text-sm">
+      <label for="span" class="text-slate-500">Liste für</label>
+      <select
+        id="span"
+        class="rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:bg-slate-800"
+        (change)="listSpanDays.set(+$any($event.target).value)"
+      >
+        <option value="-1" [selected]="listSpanDays() === -1">angezeigte Woche</option>
+        <option value="7" [selected]="listSpanDays() === 7">7 Tage</option>
+        <option value="14" [selected]="listSpanDays() === 14">14 Tage</option>
+        <option value="28" [selected]="listSpanDays() === 28">28 Tage</option>
+        <option value="0" [selected]="listSpanDays() === 0">ganzer Horizont</option>
+      </select>
+    </section>
+
+    <app-slot-list [days]="listColumns()" />
+
+    @if (detailsUnlocked() && series().length > 0) {
+      <section class="mt-8 rounded-lg border border-amber-200 p-4 dark:border-amber-900">
+        <h2 class="text-sm font-semibold">Terminserien</h2>
+        <p class="mb-3 text-xs text-slate-500">
+          Auswählen, kopieren und als <code>NonBlockingSeriesUids</code> ins Secret
+          <code>AvailabilityOverrides</code> eintragen – diese Serien werden dann angezeigt, blockieren aber nicht.
+        </p>
+        <table class="w-full text-left text-xs">
+          <thead class="text-slate-500">
+            <tr>
+              <th class="w-8"></th>
+              <th class="py-1">Titel</th>
+              <th class="py-1">Kalender</th>
+              <th class="py-1">Termine</th>
+              <th class="py-1">Regel</th>
+              <th class="py-1">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of series(); track item.uid) {
+              <tr class="border-t border-slate-100 dark:border-slate-800">
+                <td class="py-1">
+                  <input
+                    type="checkbox"
+                    [checked]="selectedSeries().includes(item.uid)"
+                    (change)="toggleSeries(item.uid)"
+                  />
+                </td>
+                <td class="py-1 font-medium">{{ item.title }}</td>
+                <td class="py-1 text-slate-500">{{ item.source }}</td>
+                <td class="py-1 text-slate-500">{{ item.count }}</td>
+                <td class="py-1 font-mono text-[0.65rem] text-slate-500">{{ item.rule }}</td>
+                <td class="py-1 text-slate-500">{{ item.kind }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+        @if (selectedSeries().length > 0) {
+          <div class="mt-3">
+            <pre class="overflow-x-auto rounded bg-slate-100 p-2 font-mono text-[0.65rem] dark:bg-slate-800">{{ seriesSnippet() }}</pre>
+            <button
+              type="button"
+              class="mt-2 rounded bg-slate-900 px-3 py-1.5 text-xs font-medium text-white dark:bg-slate-100 dark:text-slate-900"
+              (click)="copySnippet()"
+            >
+              Snippet kopieren
+            </button>
+          </div>
+        }
+      </section>
+    }
+  }
+</div>

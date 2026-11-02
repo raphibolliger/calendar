@@ -1,0 +1,28 @@
+@use "tailwindcss";
+
+:root {
+  color-scheme: light dark;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+.soft-block {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--color-sky-200) 0 6px,
+    transparent 6px 12px
+  );
+}
+
+@media (prefers-color-scheme: dark) {
+  .soft-block {
+    background: repeating-linear-gradient(
+      45deg,
+      var(--color-sky-800) 0 6px,
+      transparent 6px 12px
+    );
+  }
+}

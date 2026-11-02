@@ -1,0 +1,99 @@
+<div class="overflow-x-auto">
+  <div class="grid min-w-[46rem] gap-px" style="grid-template-columns: 3.5rem repeat(7, minmax(5.5rem, 1fr))">
+    <div class="sticky left-0 z-10 bg-white dark:bg-slate-900"></div>
+    @for (column of columns(); track column.dayKey) {
+      <div
+        class="px-1 pb-2 text-center text-xs"
+        [class.font-semibold]="column.isToday"
+        [class.text-slate-400]="!column.isWorkday"
+      >
+        <div class="uppercase tracking-wide">{{ column.weekdayShort }}</div>
+        <div class="text-sm" [class.text-emerald-600]="column.isToday">{{ column.dayShort }}</div>
+        @if (column.away) {
+          <div class="mt-1 rounded bg-rose-100 px-1 py-0.5 text-[0.65rem] text-rose-700 dark:bg-rose-950 dark:text-rose-300">
+            abwesend
+          </div>
+        } @else if (column.marked) {
+          <div class="mt-1 rounded bg-amber-100 px-1 py-0.5 text-[0.65rem] text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+            Ganztagestermin
+          </div>
+        }
+      </div>
+    }
+
+    <div class="sticky left-0 z-10 bg-white dark:bg-slate-900">
+      <div class="relative" [style.height.px]="height()">
+        @for (mark of hourMarks(); track mark.minute) {
+          <div class="absolute right-1 -translate-y-1/2 text-[0.7rem] text-slate-400" [style.top.px]="mark.offset">
+            {{ mark.label }}
+          </div>
+        }
+      </div>
+    </div>
+
+    @for (column of columns(); track column.dayKey) {
+      <div
+        class="relative rounded border border-slate-200 dark:border-slate-700"
+        [class.bg-slate-50]="!column.isWorkday"
+        [class.dark:bg-slate-800/40]="!column.isWorkday"
+        [style.height.px]="height()"
+      >
+        @for (mark of hourMarks(); track mark.minute) {
+          <div class="absolute inset-x-0 border-t border-slate-100 dark:border-slate-800" [style.top.px]="mark.offset"></div>
+        }
+
+        @if (!column.inWindow) {
+          <div class="absolute inset-0 grid place-items-center text-[0.7rem] text-slate-400">keine Daten</div>
+        } @else if (column.away) {
+          <div class="absolute inset-0 rounded bg-rose-100/70 dark:bg-rose-950/50"></div>
+        }
+
+        @if (column.inWindow && !column.away) {
+          @for (slot of column.slots; track $index) {
+            <div
+              class="absolute inset-x-0.5 rounded bg-emerald-100 px-1 text-[0.7rem] leading-tight text-emerald-800 ring-1 ring-emerald-300 dark:bg-emerald-900/50 dark:text-emerald-200 dark:ring-emerald-700"
+              [style.top.px]="topOf(slot)"
+              [style.height.px]="sizeOf(slot)"
+            >
+              {{ label(slot) }}
+            </div>
+          }
+        }
+
+        @if (showDetails()) {
+          @for (block of column.labelled; track $index) {
+            <div
+              class="absolute inset-x-0.5 overflow-hidden rounded px-1 text-[0.7rem] leading-tight"
+              [class]="
+                block.kind === 'Soft'
+                  ? 'bg-sky-100/90 text-sky-900 ring-1 ring-sky-300 dark:bg-sky-900/60 dark:text-sky-100'
+                  : 'bg-slate-300/90 text-slate-900 ring-1 ring-slate-400 dark:bg-slate-600/80 dark:text-slate-50'
+              "
+              [style.top.px]="topOf(block)"
+              [style.height.px]="sizeOf(block)"
+              [title]="block.title + ' · ' + block.source + ' · ' + block.reason"
+            >
+              <div class="font-medium">{{ block.title }}</div>
+              <div class="opacity-70">{{ block.source }}</div>
+            </div>
+          }
+        } @else {
+          @for (block of column.hard; track $index) {
+            <div
+              class="absolute inset-x-0.5 rounded bg-slate-300/90 dark:bg-slate-600/80"
+              [style.top.px]="topOf(block)"
+              [style.height.px]="sizeOf(block)"
+            ></div>
+          }
+          @for (block of column.soft; track $index) {
+            <div
+              class="soft-block absolute inset-x-0.5 rounded ring-1 ring-sky-300 dark:ring-sky-700"
+              [style.top.px]="topOf(block)"
+              [style.height.px]="sizeOf(block)"
+            ></div>
+          }
+        }
+      </div>
+    }
+  </div>
+</div>
